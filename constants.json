@@ -1,0 +1,7 @@
+{
+    "fps": 60,
+    "gravity": 0.4,
+    "vel": 1,
+    "screenwidth": 1600,
+    "screenheight": 900
+}
