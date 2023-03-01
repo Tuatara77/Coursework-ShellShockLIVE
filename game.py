@@ -264,7 +264,7 @@ def printDict(dic):
 
 class LANGame:
     def requestInfo(self):
-        prevProjectileInfo = []
+        self.prevProjectileInfo = []
         while True:
             # get the player and projectile data from the server
             if self.host:
@@ -281,14 +281,14 @@ class LANGame:
                 for key in playerInfoKeys:
                     if key not in prevPlayerInfoKeys:
                         Tank(*list(self.playerInfo[key].values()), enemy=True, name=key)
-                self.prevPlayerInfo = self.playerInfo
-            
+                self.prevPlayerInfo = self.playerInfo.copy() # .copy() to make an actual copy as opposed to a reference
+
             # if the list of projectiles has changed, add the new projectiles to the game
-            if len(self.projectileInfo) > len(prevProjectileInfo):
-                newProjectileData = self.projectileInfo[len(prevProjectileInfo):]
+            if len(self.projectileInfo) > len(self.prevProjectileInfo):
+                newProjectileData = self.projectileInfo[len(self.prevProjectileInfo):]
                 for projectile in newProjectileData:
                     Projectile(*projectile)
-                prevProjectileInfo = self.projectileInfo
+                self.prevProjectileInfo = self.projectileInfo.copy()
             sleep(0.1) # wait 0.1 seconds before requesting data again to not overload the server
 
     def __init__(self, screen: pygame.Surface, controls, data):
@@ -325,6 +325,7 @@ class LANGame:
         self.projectileInfo = []
         # establish initial dictionary of previous users to compare to "downloaded" dictionary of users
         self.prevPlayerInfo = {username: {index:value for index,value in enumerate(player1.getData())}}
+        self.prevProjectileInfo = []
 
         self.dataThread = threading.Thread(target=self.requestInfo, daemon=True)
         self.dataThread.start()
@@ -351,10 +352,9 @@ class LANGame:
                         projectile = player1.shoot()
                         # add the projectile to the server
                         if self.host: self.server.addProjectile(projectile.getData())
-                        else: 
-                            # appending the projectile data prevents the projectile being initialised twice on client computers
-                            self.projectileInfo.append(projectile.getData())
-                            self.client.addProjectile(*projectile.getData())
+                        else: self.client.addProjectile(*projectile.getData())
+                        # appending the projectile data prevents the projectile being initialised twice on client computers
+                        self.prevProjectileInfo.append(projectile.getData())
                 elif event.type == KEYUP:
                     # if a key is released, stop doing the corresponding action to the player
                     if   event.key == controls["p1powerup"]:       p1powerup = False
